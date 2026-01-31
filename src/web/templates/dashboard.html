@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}הפאנל שלי - Aiomer AI{% endblock %}
+
+{% block body %}
+<div class="header">
+    <div class="logo">Aiomer AI</div>
+    <nav>
+        <ul class="nav-links">
+            <li><a href="/chat">צ'אט</a></li>
+            <li><a href="/dashboard" class="active">הפאנל שלי</a></li>
+            <li><a href="#" onclick="API.logout()">התנתק</a></li>
+        </ul>
+    </nav>
+</div>
+
+<main class="container" style="padding: 40px 20px;">
+    <div class="alert-container"></div>
+
+    <h1 style="margin-bottom: 30px;">הפאנל שלי</h1>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value" id="statConversations">0</div>
+            <div class="stat-label">שיחות</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="statMessages">0</div>
+            <div class="stat-label">הודעות</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="statTraining">0</div>
+            <div class="stat-label">אימונים</div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">
+        <!-- Profile Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">פרטים אישיים</h3>
+            </div>
+
+            <form id="profileForm" onsubmit="updateProfile(event)">
+                <div class="form-group">
+                    <label class="form-label">שם משתמש</label>
+                    <input type="text" id="userName" class="form-input" disabled>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">אימייל</label>
+                    <input type="email" id="userEmail" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">שם מלא</label>
+                    <input type="text" id="userFullName" class="form-input">
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    עדכן פרטים
+                </button>
+            </form>
+        </div>
+
+        <!-- Change Password Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">שינוי סיסמה</h3>
+            </div>
+
+            <form id="passwordForm" onsubmit="changePassword(event)">
+                <div class="form-group">
+                    <label class="form-label">סיסמה נוכחית</label>
+                    <input type="password" id="currentPassword" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">סיסמה חדשה</label>
+                    <input type="password" id="newPassword" class="form-input" required minlength="6">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">אימות סיסמה חדשה</label>
+                    <input type="password" id="confirmPassword" class="form-input" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    שנה סיסמה
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Link -->
+    <div id="adminLink" class="hidden" style="margin-top: 30px;">
+        <a href="/admin" class="btn btn-secondary">
+            לפאנל הניהול
+        </a>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentUser = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+    if (!checkAuth()) return;
+
+    try {
+        // Load user data
+        currentUser = await API.getMe();
+        document.getElementById('userName').value = currentUser.username;
+        document.getElementById('userEmail').value = currentUser.email;
+        document.getElementById('userFullName').value = currentUser.full_name || '';
+
+        // Show admin link if admin
+        if (currentUser.role === 'admin') {
+            document.getElementById('adminLink').classList.remove('hidden');
+        }
+
+        // Load stats
+        const stats = await API.getUserStats();
+        document.getElementById('statConversations').textContent = stats.conversations;
+        document.getElementById('statMessages').textContent = stats.messages;
+        document.getElementById('statTraining').textContent = stats.training_entries;
+
+    } catch (error) {
+        showAlert('שגיאה בטעינת הנתונים');
+    }
+});
+
+async function updateProfile(e) {
+    e.preventDefault();
+
+    const email = document.getElementById('userEmail').value;
+    const fullName = document.getElementById('userFullName').value;
+
+    try {
+        await API.updateProfile({ email, full_name: fullName });
+        showAlert('הפרטים עודכנו בהצלחה', 'success');
+    } catch (error) {
+        showAlert(error.message);
+    }
+}
+
+async function changePassword(e) {
+    e.preventDefault();
+
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    if (newPassword !== confirmPassword) {
+        showAlert('הסיסמאות לא תואמות');
+        return;
+    }
+
+    try {
+        await API.changePassword(currentPassword, newPassword);
+        showAlert('הסיסמה שונתה בהצלחה', 'success');
+        document.getElementById('passwordForm').reset();
+    } catch (error) {
+        showAlert(error.message);
+    }
+}
+</script>
+{% endblock %}

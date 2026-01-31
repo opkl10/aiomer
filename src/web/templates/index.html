@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Aiomer AI - מערכת AI חכמה{% endblock %}
+
+{% block body %}
+<div class="header">
+    <div class="logo">Aiomer AI</div>
+    <nav>
+        <ul class="nav-links">
+            <li><a href="/login">התחברות</a></li>
+            <li><a href="/register">הרשמה</a></li>
+        </ul>
+    </nav>
+</div>
+
+<main style="padding: 60px 20px; text-align: center;">
+    <div class="container">
+        <h1 style="font-size: 3rem; margin-bottom: 20px; color: var(--primary-light);">
+            ברוכים הבאים ל-Aiomer AI
+        </h1>
+        <p style="font-size: 1.25rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto 40px;">
+            מערכת AI חכמה שאפשר לדבר איתה, לאמן אותה ולקבל ממנה מידע.
+            למד את המערכת מידע חדש והיא תזכור אותו לתמיד.
+        </p>
+
+        <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+            <a href="/register" class="btn btn-primary" style="font-size: 1.1rem; padding: 15px 40px;">
+                התחל עכשיו
+            </a>
+            <a href="/login" class="btn btn-secondary" style="font-size: 1.1rem; padding: 15px 40px;">
+                יש לי חשבון
+            </a>
+        </div>
+
+        <div style="margin-top: 80px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; max-width: 900px; margin-left: auto; margin-right: auto;">
+            <div class="card" style="text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 15px;">💬</div>
+                <h3 style="margin-bottom: 10px;">שיחה טבעית</h3>
+                <p style="color: var(--text-secondary);">
+                    דבר עם ה-AI בשפה טבעית וקבל תשובות מדויקות
+                </p>
+            </div>
+            <div class="card" style="text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 15px;">🧠</div>
+                <h3 style="margin-bottom: 10px;">אימון חכם</h3>
+                <p style="color: var(--text-secondary);">
+                    למד את המערכת מידע חדש והיא תזכור לתמיד
+                </p>
+            </div>
+            <div class="card" style="text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 15px;">🔍</div>
+                <h3 style="margin-bottom: 10px;">חיפוש חכם</h3>
+                <p style="color: var(--text-secondary);">
+                    המערכת מבינה את הכוונה שלך ומוצאת מידע רלוונטי
+                </p>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

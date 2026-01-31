@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}התחברות - Aiomer AI{% endblock %}
+
+{% block body %}
+<div class="auth-container">
+    <div class="auth-box">
+        <div class="auth-header">
+            <h1>התחברות</h1>
+            <p>ברוך הבא חזרה!</p>
+        </div>
+
+        <div class="alert-container"></div>
+
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label class="form-label">אימייל</label>
+                <input type="email" id="email" class="form-input" required
+                       placeholder="your@email.com">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">סיסמה</label>
+                <input type="password" id="password" class="form-input" required
+                       placeholder="הסיסמה שלך">
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
+                התחבר
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            אין לך חשבון? <a href="/register">הירשם עכשיו</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function handleLogin(e) {
+    e.preventDefault();
+
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const btn = document.getElementById('submitBtn');
+
+    btn.disabled = true;
+    btn.innerHTML = '<div class="loading"></div>';
+
+    try {
+        await API.login(email, password);
+        window.location.href = '/chat';
+    } catch (error) {
+        showAlert(error.message);
+        btn.disabled = false;
+        btn.textContent = 'התחבר';
+    }
+}
+</script>
+{% endblock %}

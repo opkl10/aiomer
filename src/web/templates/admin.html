@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}פאנל ניהול - Aiomer AI{% endblock %}
+
+{% block body %}
+<div class="header">
+    <div class="logo">Aiomer AI - ניהול</div>
+    <nav>
+        <ul class="nav-links">
+            <li><a href="/chat">צ'אט</a></li>
+            <li><a href="/dashboard">הפאנל שלי</a></li>
+            <li><a href="/admin" class="active">ניהול</a></li>
+            <li><a href="#" onclick="API.logout()">התנתק</a></li>
+        </ul>
+    </nav>
+</div>
+
+<main class="container" style="padding: 40px 20px;">
+    <div class="alert-container"></div>
+
+    <h1 style="margin-bottom: 30px;">פאנל ניהול</h1>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value" id="statTotalUsers">0</div>
+            <div class="stat-label">משתמשים</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="statActiveUsers">0</div>
+            <div class="stat-label">משתמשים פעילים</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="statTotalConversations">0</div>
+            <div class="stat-label">שיחות</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="statKnowledgeSize">0</div>
+            <div class="stat-label">פריטי ידע</div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">משתמשים</h3>
+        </div>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>שם משתמש</th>
+                        <th>אימייל</th>
+                        <th>תפקיד</th>
+                        <th>סטטוס</th>
+                        <th>הצטרף</th>
+                        <th>פעולות</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    <!-- Users loaded dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Knowledge Base Actions -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">ניהול מאגר הידע</h3>
+        </div>
+        <p style="color: var(--text-secondary); margin-bottom: 20px;">
+            פעולות על מאגר הידע של המערכת.
+        </p>
+        <div class="flex gap-10">
+            <button class="btn btn-danger" onclick="clearKnowledge()">
+                נקה את כל מאגר הידע
+            </button>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    if (!checkAuth()) return;
+
+    try {
+        // Check if user is admin
+        const user = await API.getMe();
+        if (user.role !== 'admin') {
+            window.location.href = '/dashboard';
+            return;
+        }
+
+        // Load admin dashboard
+        loadAdminDashboard();
+    } catch (error) {
+        showAlert('שגיאה בטעינת נתוני הניהול');
+    }
+});
+</script>
+{% endblock %}
