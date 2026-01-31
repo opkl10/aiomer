@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>עוזר תכנות - Aiomer</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .coding-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            height: calc(100vh - 200px);
+            padding: 20px;
+        }
+
+        .chat-panel, .code-panel {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            max-width: 85%;
+        }
+
+        .message.user {
+            background: var(--primary);
+            color: white;
+            margin-right: auto;
+        }
+
+        .message.assistant {
+            background: #f0f0f0;
+            color: #333;
+            margin-left: auto;
+        }
+
+        .message pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input:focus {
+            border-color: var(--primary);
+        }
+
+        .send-btn {
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .send-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .code-editor {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .language-select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+        }
+
+        .code-textarea {
+            flex: 1;
+            font-family: 'Fira Code', monospace;
+            font-size: 14px;
+            padding: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            resize: none;
+            outline: none;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+
+        .code-textarea:focus {
+            border-color: var(--primary);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .action-btn.analyze { background: #4CAF50; color: white; }
+        .action-btn.explain { background: #2196F3; color: white; }
+        .action-btn.review { background: #FF9800; color: white; }
+        .action-btn.run { background: #9C27B0; color: white; }
+        .action-btn.generate { background: #607D8B; color: white; }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .metrics-panel {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .metric {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .quick-commands {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .quick-cmd {
+            padding: 6px 12px;
+            background: #e8e8e8;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.3s;
+        }
+
+        .quick-cmd:hover {
+            background: #d0d0d0;
+        }
+
+        @media (max-width: 900px) {
+            .coding-container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .chat-panel, .code-panel {
+                min-height: 400px;
+            }
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/">🤖 Aiomer</a>
+        </div>
+        <div class="nav-links">
+            <a href="/chat">צ'אט</a>
+            <a href="/coding" class="active">עוזר תכנות</a>
+            <a href="/dashboard">לוח בקרה</a>
+            <button id="logoutBtn" class="btn btn-outline">התנתק</button>
+        </div>
+    </nav>
+
+    <main class="coding-container">
+        <div class="chat-panel">
+            <h2>💬 שיחה עם העוזר</h2>
+
+            <div class="quick-commands">
+                <button class="quick-cmd" data-cmd="עזרה">עזרה</button>
+                <button class="quick-cmd" data-cmd="מטריקות">מטריקות</button>
+                <button class="quick-cmd" data-cmd="תבנית singleton">Singleton</button>
+                <button class="quick-cmd" data-cmd="תבנית factory">Factory</button>
+                <button class="quick-cmd" data-cmd="צור פונקציה example">צור פונקציה</button>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="message assistant">
+                    שלום! 👋 אני עוזר התכנות שלך. אני יכול לעזור לך עם:
+                    <br><br>
+                    📊 ניתוח קוד<br>
+                    📝 יצירת קוד<br>
+                    📖 הסברים<br>
+                    🔧 תיקונים<br>
+                    ▶️ הרצת קוד<br>
+                    <br>
+                    הדבק קוד בעורך מימין או שלח לי הודעה!
+                </div>
+            </div>
+
+            <div class="loading" id="loadingIndicator">
+                <div class="spinner"></div>
+                <p>מעבד...</p>
+            </div>
+
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" id="chatInput" placeholder="הקלד הודעה או פקודה...">
+                <button class="send-btn" id="sendBtn">שלח</button>
+            </div>
+        </div>
+
+        <div class="code-panel">
+            <h2>📝 עורך קוד</h2>
+
+            <div class="editor-header">
+                <select class="language-select" id="languageSelect">
+                    <option value="python">Python</option>
+                    <option value="javascript">JavaScript</option>
+                    <option value="typescript">TypeScript</option>
+                    <option value="java">Java</option>
+                    <option value="go">Go</option>
+                    <option value="rust">Rust</option>
+                </select>
+            </div>
+
+            <div class="code-editor">
+                <textarea class="code-textarea" id="codeEditor" placeholder="הדבק או כתוב קוד כאן...">def hello_world():
+    """Example function."""
+    print("Hello, World!")
+    return True
+
+if __name__ == "__main__":
+    hello_world()</textarea>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn analyze" id="analyzeBtn">📊 נתח</button>
+                <button class="action-btn explain" id="explainBtn">📖 הסבר</button>
+                <button class="action-btn review" id="reviewBtn">✅ סקור</button>
+                <button class="action-btn run" id="runBtn">▶️ הרץ</button>
+                <button class="action-btn generate" id="generateBtn">🔧 יצירת טסטים</button>
+            </div>
+
+            <div class="metrics-panel" id="metricsPanel" style="display: none;">
+                <h3>📈 מטריקות</h3>
+                <div class="metrics-grid">
+                    <div class="metric">
+                        <div class="metric-value" id="metricLines">-</div>
+                        <div class="metric-label">שורות קוד</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="metricFunctions">-</div>
+                        <div class="metric-label">פונקציות</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="metricClasses">-</div>
+                        <div class="metric-label">מחלקות</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="metricComplexity">-</div>
+                        <div class="metric-label">מורכבות</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = '/api/coding';
+        let token = localStorage.getItem('token');
+
+        // Check authentication
+        if (!token) {
+            window.location.href = '/login';
+        }
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        };
+
+        // Elements
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const codeEditor = document.getElementById('codeEditor');
+        const languageSelect = document.getElementById('languageSelect');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const metricsPanel = document.getElementById('metricsPanel');
+
+        // Add message to chat
+        function addMessage(content, role = 'assistant') {
+            const div = document.createElement('div');
+            div.className = `message ${role}`;
+
+            // Format code blocks
+            content = content.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+            content = content.replace(/\n/g, '<br>');
+
+            div.innerHTML = content;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Show/hide loading
+        function setLoading(loading) {
+            loadingIndicator.classList.toggle('active', loading);
+            sendBtn.disabled = loading;
+        }
+
+        // Send message to agent
+        async function sendMessage(message) {
+            if (!message.trim()) return;
+
+            addMessage(message, 'user');
+            chatInput.value = '';
+            setLoading(true);
+
+            try {
+                const response = await fetch(`${API_BASE}/process`, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({ message })
+                });
+
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                const data = await response.json();
+
+                let responseText = data.message;
+                if (data.code) {
+                    responseText += `\n\n\`\`\`${data.language}\n${data.code}\n\`\`\``;
+                    codeEditor.value = data.code;
+                }
+
+                addMessage(responseText);
+            } catch (error) {
+                addMessage('❌ שגיאה בתקשורת עם השרת');
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Analyze code
+        async function analyzeCode() {
+            const code = codeEditor.value;
+            if (!code.trim()) return;
+
+            setLoading(true);
+
+            try {
+                const response = await fetch(`${API_BASE}/analyze`, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        code,
+                        language: languageSelect.value
+                    })
+                });
+
+                const data = await response.json();
+
+                // Update metrics
+                metricsPanel.style.display = 'block';
+                document.getElementById('metricLines').textContent = data.lines_of_code;
+                document.getElementById('metricFunctions').textContent = data.functions.length;
+                document.getElementById('metricClasses').textContent = data.classes.length;
+                document.getElementById('metricComplexity').textContent = data.complexity;
+
+                // Add to chat
+                let msg = `📊 תוצאות ניתוח:\n`;
+                msg += `• שורות קוד: ${data.lines_of_code}\n`;
+                msg += `• פונקציות: ${data.functions.join(', ') || 'אין'}\n`;
+                msg += `• מחלקות: ${data.classes.join(', ') || 'אין'}\n`;
+                msg += `• מורכבות: ${data.complexity}`;
+
+                if (data.issues.length > 0) {
+                    msg += `\n\n⚠️ בעיות:\n• ${data.issues.join('\n• ')}`;
+                }
+
+                addMessage(msg);
+            } catch (error) {
+                addMessage('❌ שגיאה בניתוח');
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Explain code
+        async function explainCode() {
+            const code = codeEditor.value;
+            if (!code.trim()) return;
+
+            setLoading(true);
+
+            try {
+                const response = await fetch(`${API_BASE}/explain`, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        code,
+                        language: languageSelect.value
+                    })
+                });
+
+                const data = await response.json();
+
+                let msg = `📖 הסבר הקוד:\n\n${data.summary}`;
+
+                if (data.concepts.length > 0) {
+                    msg += `\n\n📚 קונספטים:\n• ${data.concepts.join('\n• ')}`;
+                }
+
+                if (data.suggestions.length > 0) {
+                    msg += `\n\n💡 הצעות:\n• ${data.suggestions.join('\n• ')}`;
+                }
+
+                addMessage(msg);
+            } catch (error) {
+                addMessage('❌ שגיאה בהסבר');
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Review code
+        async function reviewCode() {
+            const code = codeEditor.value;
+            if (!code.trim()) return;
+
+            setLoading(true);
+
+            try {
+                const response = await fetch(`${API_BASE}/review`, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        code,
+                        language: languageSelect.value
+                    })
+                });
+
+                const data = await response.json();
+
+                let msg = `📋 סקירת קוד:\n\n`;
+                msg += `⭐ ציון איכות: ${data.score}/100\n`;
+
+                if (data.issues.length > 0) {
+                    msg += `\n⚠️ בעיות:\n• ${data.issues.join('\n• ')}`;
+                }
+
+                if (data.suggestions.length > 0) {
+                    msg += `\n\n💡 הצעות:\n• ${data.suggestions.join('\n• ')}`;
+                }
+
+                if (data.score >= 80) {
+                    msg += '\n\n✅ הקוד נראה טוב!';
+                }
+
+                addMessage(msg);
+            } catch (error) {
+                addMessage('❌ שגיאה בסקירה');
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Run code
+        async function runCode() {
+            const code = codeEditor.value;
+            if (!code.trim()) return;
+
+            if (languageSelect.value !== 'python') {
+                addMessage('⚠️ הרצת קוד נתמכת רק עבור Python');
+                return;
+            }
+
+            setLoading(true);
+
+            try {
+                const response = await fetch(`${API_BASE}/run`, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        code,
+                        language: 'python'
+                    })
+                });
+
+                const data = await response.json();
+                addMessage(data.output);
+            } catch (error) {
+                addMessage('❌ שגיאה בהרצה');
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Generate tests
+        async function generateTests() {
+            const code = codeEditor.value;
+            if (!code.trim()) return;
+
+            await sendMessage(`טסט\n${code}`);
+        }
+
+        // Event listeners
+        sendBtn.addEventListener('click', () => sendMessage(chatInput.value));
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage(chatInput.value);
+        });
+
+        document.getElementById('analyzeBtn').addEventListener('click', analyzeCode);
+        document.getElementById('explainBtn').addEventListener('click', explainCode);
+        document.getElementById('reviewBtn').addEventListener('click', reviewCode);
+        document.getElementById('runBtn').addEventListener('click', runCode);
+        document.getElementById('generateBtn').addEventListener('click', generateTests);
+
+        // Quick commands
+        document.querySelectorAll('.quick-cmd').forEach(btn => {
+            btn.addEventListener('click', () => {
+                sendMessage(btn.dataset.cmd);
+            });
+        });
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        });
+    </script>
+</body>
+</html>

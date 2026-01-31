@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from .api.routes import admin_router, auth_router, chat_router, user_router
+from .api.routes.coding import router as coding_router
 from .config import get_settings
 from .database import init_db
 
@@ -56,6 +57,7 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(user_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
+app.include_router(coding_router, prefix="/api")
 
 
 # Page routes
@@ -93,6 +95,12 @@ async def dashboard_page(request: Request):
 async def admin_page(request: Request):
     """Admin panel page."""
     return templates.TemplateResponse("admin.html", {"request": request})
+
+
+@app.get("/coding", response_class=HTMLResponse)
+async def coding_page(request: Request):
+    """Coding assistant page."""
+    return templates.TemplateResponse("coding.html", {"request": request})
 
 
 @app.get("/health")
