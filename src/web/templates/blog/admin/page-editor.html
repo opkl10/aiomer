@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>עורך עמודים</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root { --primary: #3498db; --secondary: #2c3e50; --success: #27ae60; --bg: #f4f6f9; --card-bg: #fff; }
+        body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background: var(--bg); padding: 30px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .header h1 { font-size: 1.5rem; color: var(--secondary); }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: #e0e0e0; color: var(--secondary); }
+        .btn-success { background: var(--success); color: white; }
+        .editor-grid { display: grid; grid-template-columns: 1fr 350px; gap: 25px; }
+        .card { background: var(--card-bg); border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 25px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; }
+        .form-control { width: 100%; padding: 12px 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; outline: none; }
+        .form-control:focus { border-color: var(--primary); }
+        textarea.form-control { min-height: 400px; resize: vertical; font-family: inherit; line-height: 1.7; }
+        .toggle-group { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; }
+        .toggle { position: relative; width: 50px; height: 26px; }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; border-radius: 26px; transition: 0.3s; }
+        .toggle-slider:before { position: absolute; content: ""; height: 20px; width: 20px; right: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
+        .toggle input:checked + .toggle-slider { background: var(--success); }
+        .toggle input:checked + .toggle-slider:before { transform: translateX(-24px); }
+        @media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 id="pageTitle">עמוד חדש</h1>
+        <div style="display: flex; gap: 10px;">
+            <a href="/admin/pages" class="btn btn-secondary"><i class="fas fa-arrow-right"></i> חזרה</a>
+            <button class="btn btn-secondary" onclick="savePage('draft')"><i class="fas fa-save"></i> שמור טיוטה</button>
+            <button class="btn btn-success" onclick="savePage('published')"><i class="fas fa-paper-plane"></i> פרסם</button>
+        </div>
+    </div>
+
+    <div class="editor-grid">
+        <div class="card">
+            <div class="form-group">
+                <label>כותרת</label>
+                <input type="text" class="form-control" id="title" placeholder="כותרת העמוד">
+            </div>
+            <div class="form-group">
+                <label>תוכן</label>
+                <textarea class="form-control" id="content" placeholder="תוכן העמוד... (תומך ב-Markdown)"></textarea>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="form-group">
+                <label>Slug (URL)</label>
+                <input type="text" class="form-control" id="slug" placeholder="יווצר אוטומטית">
+            </div>
+            <div class="form-group">
+                <label>תבנית</label>
+                <select class="form-control" id="template">
+                    <option value="default">ברירת מחדל</option>
+                    <option value="full-width">רוחב מלא</option>
+                    <option value="sidebar">עם סרגל צד</option>
+                </select>
+            </div>
+            <div class="toggle-group">
+                <span>הצג בתפריט</span>
+                <label class="toggle">
+                    <input type="checkbox" id="showInMenu">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="form-group">
+                <label>סדר בתפריט</label>
+                <input type="number" class="form-control" id="menuOrder" value="0">
+            </div>
+            <hr style="margin: 20px 0;">
+            <div class="form-group">
+                <label>Meta Title</label>
+                <input type="text" class="form-control" id="metaTitle">
+            </div>
+            <div class="form-group">
+                <label>Meta Description</label>
+                <textarea class="form-control" id="metaDescription" rows="3"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = '/login';
+        const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+
+        let pageId = null;
+        const pathParts = window.location.pathname.split('/');
+        if (pathParts.includes('edit')) {
+            pageId = parseInt(pathParts[pathParts.indexOf('pages') + 1]);
+            loadPage(pageId);
+            document.getElementById('pageTitle').textContent = 'עריכת עמוד';
+        }
+
+        async function loadPage(id) {
+            try {
+                const response = await fetch('/api/blog/pages', { headers });
+                const pages = await response.json();
+                const page = pages.find(p => p.id === id);
+                if (!page) return;
+
+                document.getElementById('title').value = page.title;
+                document.getElementById('content').value = page.content;
+                document.getElementById('slug').value = page.slug;
+                document.getElementById('template').value = page.template;
+                document.getElementById('showInMenu').checked = page.show_in_menu;
+                document.getElementById('menuOrder').value = page.menu_order;
+                document.getElementById('metaTitle').value = page.meta_title || '';
+                document.getElementById('metaDescription').value = page.meta_description || '';
+            } catch (error) { console.error(error); }
+        }
+
+        async function savePage(status) {
+            const data = {
+                title: document.getElementById('title').value,
+                content: document.getElementById('content').value,
+                slug: document.getElementById('slug').value || undefined,
+                status: status,
+                template: document.getElementById('template').value,
+                show_in_menu: document.getElementById('showInMenu').checked,
+                menu_order: parseInt(document.getElementById('menuOrder').value),
+                meta_title: document.getElementById('metaTitle').value || undefined,
+                meta_description: document.getElementById('metaDescription').value || undefined
+            };
+
+            if (!data.title || !data.content) { alert('יש למלא כותרת ותוכן'); return; }
+
+            try {
+                const url = pageId ? `/api/blog/pages/${pageId}` : '/api/blog/pages';
+                const method = pageId ? 'PUT' : 'POST';
+                const response = await fetch(url, { method, headers, body: JSON.stringify(data) });
+
+                if (response.ok) {
+                    alert('העמוד נשמר!');
+                    window.location.href = '/admin/pages';
+                } else {
+                    alert('שגיאה בשמירה');
+                }
+            } catch (error) { console.error(error); alert('שגיאה'); }
+        }
+    </script>
+</body>
+</html>

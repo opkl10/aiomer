@@ -1,0 +1,131 @@
+{% extends "blog/base.html" %}
+
+{% block title %}עמוד{% endblock %}
+
+{% block content %}
+<article class="page-content" id="pageContent">
+    <div class="loading" style="text-align: center; padding: 60px;">טוען...</div>
+</article>
+
+<style>
+    .page-content {
+        max-width: 900px;
+        margin: 0 auto;
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 50px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+    }
+
+    .page-content h1 {
+        font-size: 2.5rem;
+        margin-bottom: 30px;
+        color: var(--secondary);
+    }
+
+    .page-body {
+        font-size: 1.1rem;
+        line-height: 1.9;
+    }
+
+    .page-body h2 {
+        margin-top: 35px;
+        margin-bottom: 15px;
+        color: var(--secondary);
+    }
+
+    .page-body h3 {
+        margin-top: 25px;
+        margin-bottom: 12px;
+    }
+
+    .page-body p {
+        margin-bottom: 18px;
+    }
+
+    .page-body img {
+        max-width: 100%;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+
+    .page-body ul, .page-body ol {
+        margin: 15px 0;
+        padding-right: 25px;
+    }
+
+    .page-body li {
+        margin-bottom: 10px;
+    }
+
+    .page-body a {
+        color: var(--primary);
+    }
+
+    .page-body blockquote {
+        border-right: 4px solid var(--primary);
+        padding: 15px 20px;
+        margin: 20px 0;
+        background: var(--bg);
+        border-radius: 0 8px 8px 0;
+        font-style: italic;
+    }
+
+    @media (max-width: 768px) {
+        .page-content {
+            padding: 30px 20px;
+        }
+
+        .page-content h1 {
+            font-size: 1.8rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const slug = '{{ slug }}';
+
+    async function loadPage() {
+        try {
+            const response = await fetch(`/api/blog/pages/${slug}`);
+            if (!response.ok) throw new Error('Page not found');
+
+            const page = await response.json();
+
+            document.title = page.title;
+
+            // Render content
+            let content = page.content;
+
+            // Simple markdown-like rendering
+            content = content.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+            content = content.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+            content = content.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            content = content.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+            content = content.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+            content = content.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+            content = content.replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>');
+            content = content.split('\n\n').map(p => p.startsWith('<') ? p : `<p>${p}</p>`).join('');
+
+            document.getElementById('pageContent').innerHTML = `
+                <h1>${page.title}</h1>
+                <div class="page-body">${content}</div>
+            `;
+
+        } catch (error) {
+            console.error('Failed to load page:', error);
+            document.getElementById('pageContent').innerHTML = `
+                <div style="text-align: center;">
+                    <h2>העמוד לא נמצא</h2>
+                    <p>העמוד שחיפשת לא קיים.</p>
+                    <a href="/blog" style="color: var(--primary);">חזרה לבלוג</a>
+                </div>
+            `;
+        }
+    }
+
+    loadPage();
+</script>
+{% endblock %}

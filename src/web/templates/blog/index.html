@@ -1,0 +1,254 @@
+{% extends "blog/base.html" %}
+
+{% block title %}בלוג{% endblock %}
+
+{% block hero %}
+<section class="hero" id="heroSection">
+    <h1 id="heroTitle">ברוכים הבאים לבלוג</h1>
+    <p id="heroDescription">תוכן מעניין ומקצועי</p>
+</section>
+{% endblock %}
+
+{% block content %}
+<div class="content-grid">
+    <div class="posts-section">
+        <!-- Featured Post -->
+        <div class="featured-post" id="featuredPost" style="display: none;"></div>
+
+        <!-- Posts List -->
+        <div class="posts-list" id="postsList">
+            <div class="loading">טוען פוסטים...</div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" id="pagination"></div>
+    </div>
+
+    <aside class="sidebar">
+        <!-- Search -->
+        <div class="sidebar-widget">
+            <h3><i class="fas fa-search"></i> חיפוש</h3>
+            <form class="search-form" onsubmit="searchPosts(event)">
+                <input type="text" id="searchInput" placeholder="חפש בבלוג...">
+                <button type="submit"><i class="fas fa-search"></i></button>
+            </form>
+        </div>
+
+        <!-- Categories -->
+        <div class="sidebar-widget">
+            <h3><i class="fas fa-folder"></i> קטגוריות</h3>
+            <ul class="categories-list" id="categoriesList">
+                <li>טוען...</li>
+            </ul>
+        </div>
+
+        <!-- Tags -->
+        <div class="sidebar-widget">
+            <h3><i class="fas fa-tags"></i> תגיות</h3>
+            <div class="tags-cloud" id="tagsList">
+                טוען...
+            </div>
+        </div>
+
+        <!-- Recent Posts -->
+        <div class="sidebar-widget">
+            <h3><i class="fas fa-clock"></i> פוסטים אחרונים</h3>
+            <ul class="categories-list" id="recentPosts">
+                <li>טוען...</li>
+            </ul>
+        </div>
+    </aside>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentPage = 1;
+    const perPage = 10;
+
+    async function loadPosts(page = 1, search = '') {
+        const postsList = document.getElementById('postsList');
+        postsList.innerHTML = '<div class="loading">טוען פוסטים...</div>';
+
+        try {
+            let url = `/api/blog/posts?page=${page}&per_page=${perPage}&status=published`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.posts.length === 0) {
+                postsList.innerHTML = '<p style="text-align: center; padding: 40px;">לא נמצאו פוסטים</p>';
+                return;
+            }
+
+            postsList.innerHTML = '';
+
+            // Featured post (first one if featured)
+            const featuredPost = data.posts.find(p => p.is_featured);
+            if (featuredPost && page === 1 && !search) {
+                document.getElementById('featuredPost').style.display = 'block';
+                document.getElementById('featuredPost').innerHTML = `
+                    <article class="post-card">
+                        ${featuredPost.featured_image ? `<img src="${featuredPost.featured_image}" alt="${featuredPost.title}" class="post-card-image">` : ''}
+                        <div class="post-card-content">
+                            <div class="post-card-meta">
+                                ${featuredPost.category_name ? `<span class="post-card-category">${featuredPost.category_name}</span>` : ''}
+                                <span><i class="far fa-calendar"></i> ${new Date(featuredPost.published_at || featuredPost.created_at).toLocaleDateString('he-IL')}</span>
+                                <span><i class="far fa-eye"></i> ${featuredPost.views}</span>
+                            </div>
+                            <h2><a href="/blog/post/${featuredPost.slug}">${featuredPost.title}</a></h2>
+                            <p class="post-card-excerpt">${featuredPost.excerpt || featuredPost.content.substring(0, 200)}...</p>
+                            <a href="/blog/post/${featuredPost.slug}" class="read-more">קרא עוד <i class="fas fa-arrow-left"></i></a>
+                        </div>
+                    </article>
+                `;
+            }
+
+            // Regular posts
+            data.posts.forEach(post => {
+                if (post.id === featuredPost?.id && page === 1 && !search) return;
+
+                const postCard = document.createElement('article');
+                postCard.className = 'post-card';
+                postCard.innerHTML = `
+                    ${post.featured_image ? `<img src="${post.featured_image}" alt="${post.title}" class="post-card-image">` : ''}
+                    <div class="post-card-content">
+                        <div class="post-card-meta">
+                            ${post.category_name ? `<span class="post-card-category">${post.category_name}</span>` : ''}
+                            <span><i class="far fa-calendar"></i> ${new Date(post.published_at || post.created_at).toLocaleDateString('he-IL')}</span>
+                            <span><i class="far fa-user"></i> ${post.author_name}</span>
+                            <span><i class="far fa-eye"></i> ${post.views}</span>
+                        </div>
+                        <h2><a href="/blog/post/${post.slug}">${post.title}</a></h2>
+                        <p class="post-card-excerpt">${post.excerpt || post.content.substring(0, 200)}...</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <a href="/blog/post/${post.slug}" class="read-more">קרא עוד <i class="fas fa-arrow-left"></i></a>
+                            <div class="tags-cloud" style="margin: 0;">
+                                ${post.tags.map(t => `<a href="/blog/tag/${t.slug}" class="tag">${t.name}</a>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                postsList.appendChild(postCard);
+            });
+
+            // Pagination
+            renderPagination(data.total_pages, page);
+
+        } catch (error) {
+            console.error('Failed to load posts:', error);
+            postsList.innerHTML = '<p style="text-align: center; padding: 40px;">שגיאה בטעינת פוסטים</p>';
+        }
+    }
+
+    function renderPagination(totalPages, currentPage) {
+        const pagination = document.getElementById('pagination');
+        pagination.innerHTML = '';
+
+        if (totalPages <= 1) return;
+
+        if (currentPage > 1) {
+            pagination.innerHTML += `<a href="#" onclick="loadPosts(${currentPage - 1}); return false;"><i class="fas fa-chevron-right"></i></a>`;
+        }
+
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === currentPage) {
+                pagination.innerHTML += `<span class="active">${i}</span>`;
+            } else if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                pagination.innerHTML += `<a href="#" onclick="loadPosts(${i}); return false;">${i}</a>`;
+            } else if (i === currentPage - 3 || i === currentPage + 3) {
+                pagination.innerHTML += `<span>...</span>`;
+            }
+        }
+
+        if (currentPage < totalPages) {
+            pagination.innerHTML += `<a href="#" onclick="loadPosts(${currentPage + 1}); return false;"><i class="fas fa-chevron-left"></i></a>`;
+        }
+    }
+
+    async function loadCategories() {
+        try {
+            const response = await fetch('/api/blog/categories');
+            const categories = await response.json();
+
+            const list = document.getElementById('categoriesList');
+            list.innerHTML = '';
+
+            categories.forEach(cat => {
+                list.innerHTML += `
+                    <li>
+                        <a href="/blog/category/${cat.slug}">
+                            <span><i class="fas fa-circle" style="font-size: 8px; color: ${cat.color};"></i> ${cat.name}</span>
+                            <span>${cat.post_count}</span>
+                        </a>
+                    </li>
+                `;
+            });
+
+            if (categories.length === 0) {
+                list.innerHTML = '<li>אין קטגוריות</li>';
+            }
+        } catch (error) {
+            console.error('Failed to load categories:', error);
+        }
+    }
+
+    async function loadTags() {
+        try {
+            const response = await fetch('/api/blog/tags');
+            const tags = await response.json();
+
+            const list = document.getElementById('tagsList');
+            list.innerHTML = '';
+
+            tags.forEach(tag => {
+                list.innerHTML += `<a href="/blog/tag/${tag.slug}" class="tag">${tag.name}</a>`;
+            });
+
+            if (tags.length === 0) {
+                list.innerHTML = 'אין תגיות';
+            }
+        } catch (error) {
+            console.error('Failed to load tags:', error);
+        }
+    }
+
+    async function loadRecentPosts() {
+        try {
+            const response = await fetch('/api/blog/posts?per_page=5&status=published');
+            const data = await response.json();
+
+            const list = document.getElementById('recentPosts');
+            list.innerHTML = '';
+
+            data.posts.forEach(post => {
+                list.innerHTML += `
+                    <li>
+                        <a href="/blog/post/${post.slug}">${post.title}</a>
+                    </li>
+                `;
+            });
+
+            if (data.posts.length === 0) {
+                list.innerHTML = '<li>אין פוסטים</li>';
+            }
+        } catch (error) {
+            console.error('Failed to load recent posts:', error);
+        }
+    }
+
+    function searchPosts(event) {
+        event.preventDefault();
+        const search = document.getElementById('searchInput').value;
+        loadPosts(1, search);
+    }
+
+    // Initialize
+    loadPosts();
+    loadCategories();
+    loadTags();
+    loadRecentPosts();
+</script>
+{% endblock %}

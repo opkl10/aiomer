@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">{% block title %}הבלוג{% endblock %}</title>
+    <meta name="description" content="{% block description %}{% endblock %}">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #333333;
+            --text-light: #666666;
+            --border: #e0e0e0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        /* Header */
+        .blog-header {
+            background: var(--secondary);
+            color: white;
+            padding: 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: white;
+        }
+
+        .logo img {
+            height: 45px;
+            width: auto;
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+        }
+
+        .nav-menu a {
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 0;
+            position: relative;
+            transition: color 0.3s;
+        }
+
+        .nav-menu a:hover {
+            color: white;
+        }
+
+        .nav-menu a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+
+        .nav-menu a:hover::after {
+            width: 100%;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+            color: white;
+            padding: 80px 20px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 40px;
+        }
+
+        /* Posts List */
+        .posts-list {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .post-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .post-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .post-card-image {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+        }
+
+        .post-card-content {
+            padding: 25px;
+        }
+
+        .post-card-meta {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+        }
+
+        .post-card-category {
+            background: var(--primary);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+        }
+
+        .post-card h2 {
+            font-size: 1.4rem;
+            margin-bottom: 12px;
+        }
+
+        .post-card h2 a {
+            color: var(--text);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .post-card h2 a:hover {
+            color: var(--primary);
+        }
+
+        .post-card-excerpt {
+            color: var(--text-light);
+            margin-bottom: 15px;
+        }
+
+        .read-more {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .read-more:hover {
+            text-decoration: underline;
+        }
+
+        /* Featured Post */
+        .featured-post {
+            grid-column: span 2;
+        }
+
+        .featured-post .post-card {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .featured-post .post-card-image {
+            height: 100%;
+            min-height: 300px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .sidebar-widget {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+        }
+
+        .sidebar-widget h3 {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .categories-list {
+            list-style: none;
+        }
+
+        .categories-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .categories-list li:last-child {
+            border-bottom: none;
+        }
+
+        .categories-list a {
+            color: var(--text);
+            text-decoration: none;
+            display: flex;
+            justify-content: space-between;
+            transition: color 0.3s;
+        }
+
+        .categories-list a:hover {
+            color: var(--primary);
+        }
+
+        .tags-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag {
+            background: var(--bg);
+            color: var(--text-light);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .tag:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Search */
+        .search-form {
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-form input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .search-form button {
+            padding: 10px 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .search-form button:hover {
+            background: var(--secondary);
+        }
+
+        /* AI Assistant Floating Button */
+        .ai-assistant-btn {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+            z-index: 1000;
+        }
+
+        .ai-assistant-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 30px rgba(0,0,0,0.3);
+        }
+
+        /* AI Chat Modal */
+        .ai-modal {
+            display: none;
+            position: fixed;
+            bottom: 100px;
+            left: 30px;
+            width: 380px;
+            height: 500px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.2);
+            z-index: 1001;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .ai-modal.active {
+            display: flex;
+        }
+
+        .ai-modal-header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ai-modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .ai-modal-input {
+            padding: 15px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+        }
+
+        .ai-modal-input input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            outline: none;
+        }
+
+        .ai-modal-input button {
+            padding: 10px 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        /* Footer */
+        .blog-footer {
+            background: var(--secondary);
+            color: white;
+            padding: 50px 20px 20px;
+            margin-top: 60px;
+        }
+
+        .footer-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+        }
+
+        .footer-section h4 {
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section li {
+            margin-bottom: 10px;
+        }
+
+        .footer-section a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-section a:hover {
+            color: white;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 15px;
+        }
+
+        .social-links a {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+        }
+
+        .social-links a:hover {
+            background: var(--primary);
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 40px auto 0;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+            color: rgba(255,255,255,0.6);
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 40px;
+        }
+
+        .pagination a, .pagination span {
+            padding: 10px 15px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .pagination a {
+            background: var(--card-bg);
+            color: var(--text);
+        }
+
+        .pagination a:hover, .pagination .active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .featured-post {
+                grid-column: span 1;
+            }
+
+            .featured-post .post-card {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-inner {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-menu {
+                display: none;
+                position: absolute;
+                top: 70px;
+                right: 0;
+                left: 0;
+                background: var(--secondary);
+                flex-direction: column;
+                padding: 20px;
+                gap: 15px;
+            }
+
+            .nav-menu.active {
+                display: flex;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+    <style id="customStyles"></style>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <header class="blog-header">
+        <div class="header-inner">
+            <a href="/blog" class="logo" id="siteLogo">
+                <span class="logo-text" id="siteName">הבלוג</span>
+            </a>
+            <nav>
+                <button class="mobile-menu-btn" onclick="toggleMenu()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="/blog">בית</a></li>
+                    <li><a href="/blog" id="navCategories">קטגוריות</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    {% block hero %}{% endblock %}
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="blog-footer">
+        <div class="footer-inner">
+            <div class="footer-section">
+                <h4 id="footerSiteName">הבלוג</h4>
+                <p id="footerDescription">ברוכים הבאים לבלוג שלנו</p>
+            </div>
+            <div class="footer-section">
+                <h4>קישורים מהירים</h4>
+                <ul id="footerPages">
+                    <li><a href="/blog">בית</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>עקבו אחרינו</h4>
+                <div class="social-links" id="socialLinks">
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom" id="footerText">
+            כל הזכויות שמורות
+        </div>
+    </footer>
+
+    <!-- AI Assistant -->
+    <button class="ai-assistant-btn" id="aiBtn" onclick="toggleAI()" style="display: none;">
+        <i class="fas fa-robot"></i>
+    </button>
+
+    <div class="ai-modal" id="aiModal">
+        <div class="ai-modal-header">
+            <span><i class="fas fa-robot"></i> עוזר AI</span>
+            <button onclick="toggleAI()" style="background: none; border: none; color: white; cursor: pointer;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="ai-modal-body" id="aiChat">
+            <div class="message assistant">שלום! איך אני יכול לעזור לך?</div>
+        </div>
+        <div class="ai-modal-input">
+            <input type="text" id="aiInput" placeholder="הקלד הודעה...">
+            <button onclick="sendAIMessage()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script>
+        // Load site settings
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/blog/settings');
+                const settings = await response.json();
+
+                // Apply settings
+                if (settings.site_name) {
+                    document.getElementById('siteName').textContent = settings.site_name;
+                    document.getElementById('footerSiteName').textContent = settings.site_name;
+                    document.title = settings.site_name + ' - ' + document.title;
+                }
+
+                if (settings.site_description) {
+                    document.getElementById('footerDescription').textContent = settings.site_description;
+                }
+
+                if (settings.logo_url) {
+                    const logo = document.getElementById('siteLogo');
+                    const img = document.createElement('img');
+                    img.src = settings.logo_url;
+                    img.alt = settings.site_name;
+                    logo.insertBefore(img, logo.firstChild);
+                }
+
+                if (settings.primary_color) {
+                    document.documentElement.style.setProperty('--primary', settings.primary_color);
+                }
+
+                if (settings.secondary_color) {
+                    document.documentElement.style.setProperty('--secondary', settings.secondary_color);
+                }
+
+                if (settings.footer_text) {
+                    document.getElementById('footerText').textContent = settings.footer_text;
+                }
+
+                if (settings.custom_css) {
+                    document.getElementById('customStyles').textContent = settings.custom_css;
+                }
+
+                // Social links
+                const socialLinks = document.getElementById('socialLinks');
+                const socials = [
+                    { key: 'social_facebook', icon: 'fab fa-facebook-f' },
+                    { key: 'social_twitter', icon: 'fab fa-twitter' },
+                    { key: 'social_instagram', icon: 'fab fa-instagram' },
+                    { key: 'social_linkedin', icon: 'fab fa-linkedin-in' },
+                    { key: 'social_github', icon: 'fab fa-github' }
+                ];
+
+                socials.forEach(social => {
+                    if (settings[social.key]) {
+                        const a = document.createElement('a');
+                        a.href = settings[social.key];
+                        a.target = '_blank';
+                        a.innerHTML = `<i class="${social.icon}"></i>`;
+                        socialLinks.appendChild(a);
+                    }
+                });
+
+                // AI Assistant
+                if (settings.enable_ai_assistant) {
+                    document.getElementById('aiBtn').style.display = 'flex';
+                }
+
+            } catch (error) {
+                console.error('Failed to load settings:', error);
+            }
+        }
+
+        // Load menu pages
+        async function loadMenuPages() {
+            try {
+                const response = await fetch('/api/blog/pages?menu_only=true&status=published');
+                const pages = await response.json();
+
+                const navMenu = document.getElementById('navMenu');
+                const footerPages = document.getElementById('footerPages');
+
+                pages.forEach(page => {
+                    const navLi = document.createElement('li');
+                    navLi.innerHTML = `<a href="/page/${page.slug}">${page.title}</a>`;
+                    navMenu.appendChild(navLi);
+
+                    const footerLi = document.createElement('li');
+                    footerLi.innerHTML = `<a href="/page/${page.slug}">${page.title}</a>`;
+                    footerPages.appendChild(footerLi);
+                });
+            } catch (error) {
+                console.error('Failed to load pages:', error);
+            }
+        }
+
+        function toggleMenu() {
+            document.getElementById('navMenu').classList.toggle('active');
+        }
+
+        function toggleAI() {
+            document.getElementById('aiModal').classList.toggle('active');
+        }
+
+        async function sendAIMessage() {
+            const input = document.getElementById('aiInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const chat = document.getElementById('aiChat');
+
+            // Add user message
+            chat.innerHTML += `<div class="message user" style="background: var(--primary); color: white; padding: 10px 15px; border-radius: 15px; margin: 10px 0; margin-right: auto; max-width: 80%;">${message}</div>`;
+            input.value = '';
+            chat.scrollTop = chat.scrollHeight;
+
+            // Get AI response
+            const token = localStorage.getItem('token');
+            if (!token) {
+                chat.innerHTML += `<div class="message assistant" style="background: #f0f0f0; padding: 10px 15px; border-radius: 15px; margin: 10px 0; max-width: 80%;">יש להתחבר כדי להשתמש בעוזר</div>`;
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/coding/process', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ message })
+                });
+
+                const data = await response.json();
+                chat.innerHTML += `<div class="message assistant" style="background: #f0f0f0; padding: 10px 15px; border-radius: 15px; margin: 10px 0; max-width: 80%;">${data.message}</div>`;
+                chat.scrollTop = chat.scrollHeight;
+            } catch (error) {
+                chat.innerHTML += `<div class="message assistant" style="background: #f0f0f0; padding: 10px 15px; border-radius: 15px; margin: 10px 0; max-width: 80%;">שגיאה בתקשורת</div>`;
+            }
+        }
+
+        document.getElementById('aiInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendAIMessage();
+        });
+
+        // Initialize
+        loadSettings();
+        loadMenuPages();
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>הגדרות האתר</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root { --primary: #3498db; --secondary: #2c3e50; --success: #27ae60; --bg: #f4f6f9; --card-bg: #fff; }
+        body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background: var(--bg); padding: 30px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header h1 { font-size: 1.8rem; color: var(--secondary); }
+        .btn { padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-secondary { background: #e0e0e0; color: var(--secondary); }
+        .settings-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; }
+        .card { background: var(--card-bg); border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 25px; }
+        .card h3 { font-size: 1.1rem; color: var(--secondary); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--primary); display: flex; align-items: center; gap: 10px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: #555; }
+        .form-control { width: 100%; padding: 12px 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; outline: none; transition: border-color 0.3s; }
+        .form-control:focus { border-color: var(--primary); }
+        textarea.form-control { min-height: 100px; resize: vertical; font-family: inherit; }
+        .color-input { display: flex; gap: 10px; align-items: center; }
+        .color-input input[type="color"] { width: 50px; height: 40px; border: none; border-radius: 6px; cursor: pointer; }
+        .color-input input[type="text"] { flex: 1; }
+        .logo-preview { width: 100%; height: 120px; border: 2px dashed #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; cursor: pointer; background-size: contain; background-repeat: no-repeat; background-position: center; }
+        .logo-preview:hover { border-color: var(--primary); }
+        .logo-preview i { font-size: 2rem; color: #ccc; }
+        .toggle-group { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .toggle { position: relative; width: 50px; height: 26px; }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; border-radius: 26px; transition: 0.3s; }
+        .toggle-slider:before { position: absolute; content: ""; height: 20px; width: 20px; right: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
+        .toggle input:checked + .toggle-slider { background: var(--success); }
+        .toggle input:checked + .toggle-slider:before { transform: translateX(-24px); }
+        .social-input { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .social-input i { width: 30px; text-align: center; font-size: 1.2rem; }
+        .social-input input { flex: 1; }
+        .full-width { grid-column: span 2; }
+        .save-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px 30px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); display: flex; justify-content: flex-end; gap: 15px; }
+        @media (max-width: 900px) { .settings-grid { grid-template-columns: 1fr; } .full-width { grid-column: span 1; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <a href="/admin/blog" class="btn btn-secondary" style="margin-left: 15px;"><i class="fas fa-arrow-right"></i></a>
+            <h1 style="display: inline;"><i class="fas fa-cog"></i> הגדרות האתר</h1>
+        </div>
+    </div>
+
+    <div class="settings-grid">
+        <div class="card">
+            <h3><i class="fas fa-info-circle"></i> פרטי האתר</h3>
+            <div class="form-group">
+                <label>שם האתר</label>
+                <input type="text" class="form-control" id="siteName" placeholder="הבלוג שלי">
+            </div>
+            <div class="form-group">
+                <label>תיאור האתר</label>
+                <textarea class="form-control" id="siteDescription" placeholder="תיאור קצר של האתר"></textarea>
+            </div>
+            <div class="form-group">
+                <label>טקסט פוטר</label>
+                <input type="text" class="form-control" id="footerText" placeholder="כל הזכויות שמורות">
+            </div>
+        </div>
+
+        <div class="card">
+            <h3><i class="fas fa-image"></i> לוגו ואייקון</h3>
+            <div class="form-group">
+                <label>לוגו</label>
+                <div class="logo-preview" id="logoPreview" onclick="document.getElementById('logoInput').click()">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <input type="file" id="logoInput" accept="image/*" style="display: none;" onchange="uploadImage(this, 'logo')">
+                <input type="text" class="form-control" id="logoUrl" placeholder="או הדבק URL">
+            </div>
+            <div class="form-group">
+                <label>Favicon</label>
+                <input type="text" class="form-control" id="faviconUrl" placeholder="URL לאייקון האתר">
+            </div>
+        </div>
+
+        <div class="card">
+            <h3><i class="fas fa-palette"></i> צבעים</h3>
+            <div class="form-group">
+                <label>צבע ראשי</label>
+                <div class="color-input">
+                    <input type="color" id="primaryColorPicker" onchange="document.getElementById('primaryColor').value = this.value">
+                    <input type="text" class="form-control" id="primaryColor" value="#3498db" onchange="document.getElementById('primaryColorPicker').value = this.value">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>צבע משני</label>
+                <div class="color-input">
+                    <input type="color" id="secondaryColorPicker" onchange="document.getElementById('secondaryColor').value = this.value">
+                    <input type="text" class="form-control" id="secondaryColor" value="#2c3e50" onchange="document.getElementById('secondaryColorPicker').value = this.value">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3><i class="fas fa-share-alt"></i> רשתות חברתיות</h3>
+            <div class="social-input">
+                <i class="fab fa-facebook" style="color: #3b5998;"></i>
+                <input type="text" class="form-control" id="socialFacebook" placeholder="URL לפייסבוק">
+            </div>
+            <div class="social-input">
+                <i class="fab fa-twitter" style="color: #1da1f2;"></i>
+                <input type="text" class="form-control" id="socialTwitter" placeholder="URL לטוויטר">
+            </div>
+            <div class="social-input">
+                <i class="fab fa-instagram" style="color: #e4405f;"></i>
+                <input type="text" class="form-control" id="socialInstagram" placeholder="URL לאינסטגרם">
+            </div>
+            <div class="social-input">
+                <i class="fab fa-linkedin" style="color: #0077b5;"></i>
+                <input type="text" class="form-control" id="socialLinkedin" placeholder="URL ללינקדאין">
+            </div>
+            <div class="social-input">
+                <i class="fab fa-github" style="color: #333;"></i>
+                <input type="text" class="form-control" id="socialGithub" placeholder="URL לגיטהאב">
+            </div>
+        </div>
+
+        <div class="card">
+            <h3><i class="fas fa-sliders-h"></i> הגדרות כלליות</h3>
+            <div class="form-group">
+                <label>פוסטים לעמוד</label>
+                <input type="number" class="form-control" id="postsPerPage" value="10" min="1" max="50">
+            </div>
+            <div class="form-group">
+                <label>Google Analytics ID</label>
+                <input type="text" class="form-control" id="googleAnalytics" placeholder="UA-XXXXX-X או G-XXXXXXX">
+            </div>
+            <div class="toggle-group">
+                <span>הפעל תגובות</span>
+                <label class="toggle">
+                    <input type="checkbox" id="enableComments" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="toggle-group">
+                <span>הפעל עוזר AI</span>
+                <label class="toggle">
+                    <input type="checkbox" id="enableAI" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="card full-width">
+            <h3><i class="fas fa-code"></i> קוד מותאם אישית</h3>
+            <div class="form-group">
+                <label>CSS מותאם אישית</label>
+                <textarea class="form-control" id="customCss" rows="6" placeholder="/* CSS מותאם אישית */"></textarea>
+            </div>
+            <div class="form-group">
+                <label>קוד ב-HEAD (Analytics, Meta tags וכו')</label>
+                <textarea class="form-control" id="customHead" rows="4" placeholder="<!-- קוד שיתווסף ל-head -->"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="save-bar">
+        <button class="btn btn-secondary" onclick="loadSettings()"><i class="fas fa-undo"></i> בטל שינויים</button>
+        <button class="btn btn-success" onclick="saveSettings()"><i class="fas fa-save"></i> שמור הגדרות</button>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = '/login';
+        const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/blog/settings', { headers });
+                const settings = await response.json();
+
+                document.getElementById('siteName').value = settings.site_name || '';
+                document.getElementById('siteDescription').value = settings.site_description || '';
+                document.getElementById('footerText').value = settings.footer_text || '';
+                document.getElementById('logoUrl').value = settings.logo_url || '';
+                document.getElementById('faviconUrl').value = settings.favicon_url || '';
+                document.getElementById('primaryColor').value = settings.primary_color || '#3498db';
+                document.getElementById('primaryColorPicker').value = settings.primary_color || '#3498db';
+                document.getElementById('secondaryColor').value = settings.secondary_color || '#2c3e50';
+                document.getElementById('secondaryColorPicker').value = settings.secondary_color || '#2c3e50';
+                document.getElementById('socialFacebook').value = settings.social_facebook || '';
+                document.getElementById('socialTwitter').value = settings.social_twitter || '';
+                document.getElementById('socialInstagram').value = settings.social_instagram || '';
+                document.getElementById('socialLinkedin').value = settings.social_linkedin || '';
+                document.getElementById('socialGithub').value = settings.social_github || '';
+                document.getElementById('postsPerPage').value = settings.posts_per_page || 10;
+                document.getElementById('googleAnalytics').value = settings.google_analytics_id || '';
+                document.getElementById('enableComments').checked = settings.enable_comments !== false;
+                document.getElementById('enableAI').checked = settings.enable_ai_assistant !== false;
+                document.getElementById('customCss').value = settings.custom_css || '';
+                document.getElementById('customHead').value = settings.custom_head || '';
+
+                if (settings.logo_url) {
+                    document.getElementById('logoPreview').style.backgroundImage = `url(${settings.logo_url})`;
+                    document.getElementById('logoPreview').querySelector('i').style.display = 'none';
+                }
+
+            } catch (error) {
+                console.error('Failed to load settings:', error);
+            }
+        }
+
+        async function saveSettings() {
+            const data = {
+                site_name: document.getElementById('siteName').value,
+                site_description: document.getElementById('siteDescription').value,
+                footer_text: document.getElementById('footerText').value,
+                logo_url: document.getElementById('logoUrl').value || null,
+                favicon_url: document.getElementById('faviconUrl').value || null,
+                primary_color: document.getElementById('primaryColor').value,
+                secondary_color: document.getElementById('secondaryColor').value,
+                social_facebook: document.getElementById('socialFacebook').value || null,
+                social_twitter: document.getElementById('socialTwitter').value || null,
+                social_instagram: document.getElementById('socialInstagram').value || null,
+                social_linkedin: document.getElementById('socialLinkedin').value || null,
+                social_github: document.getElementById('socialGithub').value || null,
+                posts_per_page: parseInt(document.getElementById('postsPerPage').value),
+                google_analytics_id: document.getElementById('googleAnalytics').value || null,
+                enable_comments: document.getElementById('enableComments').checked,
+                enable_ai_assistant: document.getElementById('enableAI').checked,
+                custom_css: document.getElementById('customCss').value || null,
+                custom_head: document.getElementById('customHead').value || null
+            };
+
+            try {
+                const response = await fetch('/api/blog/settings', {
+                    method: 'PUT',
+                    headers,
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    alert('ההגדרות נשמרו בהצלחה!');
+                } else {
+                    alert('שגיאה בשמירת ההגדרות');
+                }
+            } catch (error) {
+                console.error('Failed to save:', error);
+                alert('שגיאה בשמירה');
+            }
+        }
+
+        async function uploadImage(input, type) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/api/blog/media/upload', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+
+                const media = await response.json();
+
+                if (type === 'logo') {
+                    document.getElementById('logoUrl').value = media.file_path;
+                    document.getElementById('logoPreview').style.backgroundImage = `url(${media.file_path})`;
+                    document.getElementById('logoPreview').querySelector('i').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Failed to upload:', error);
+                alert('שגיאה בהעלאה');
+            }
+        }
+
+        loadSettings();
+    </script>
+</body>
+</html>

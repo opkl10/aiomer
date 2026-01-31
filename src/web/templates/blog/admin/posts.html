@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ניהול פוסטים</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root { --primary: #3498db; --secondary: #2c3e50; --success: #27ae60; --danger: #e74c3c; --bg: #f4f6f9; --card-bg: #fff; }
+        body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background: var(--bg); padding: 30px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header h1 { font-size: 1.8rem; color: var(--secondary); }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: #e0e0e0; color: var(--secondary); }
+        .card { background: var(--card-bg); border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .filters { padding: 20px; border-bottom: 1px solid #eee; display: flex; gap: 15px; flex-wrap: wrap; }
+        .filters select, .filters input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; }
+        .table { width: 100%; border-collapse: collapse; }
+        .table th, .table td { padding: 15px; text-align: right; border-bottom: 1px solid #eee; }
+        .table th { font-weight: 600; color: #666; font-size: 0.85rem; background: #fafafa; }
+        .table tr:hover { background: #f9f9f9; }
+        .status-badge { padding: 4px 12px; border-radius: 15px; font-size: 0.8rem; }
+        .status-published { background: #d4edda; color: #155724; }
+        .status-draft { background: #fff3cd; color: #856404; }
+        .action-btns { display: flex; gap: 8px; }
+        .action-btn { width: 32px; height: 32px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .action-btn.edit { background: #e3f2fd; color: var(--primary); }
+        .action-btn.view { background: #e8f5e9; color: var(--success); }
+        .action-btn.delete { background: #ffebee; color: var(--danger); }
+        .pagination { display: flex; justify-content: center; gap: 8px; padding: 20px; }
+        .pagination button { padding: 8px 15px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer; }
+        .pagination button.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .empty { text-align: center; padding: 60px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <a href="/admin/blog" class="btn btn-secondary" style="margin-left: 15px;"><i class="fas fa-arrow-right"></i></a>
+            <h1 style="display: inline;">ניהול פוסטים</h1>
+        </div>
+        <a href="/admin/posts/new" class="btn btn-primary"><i class="fas fa-plus"></i> פוסט חדש</a>
+    </div>
+
+    <div class="card">
+        <div class="filters">
+            <select id="filterStatus" onchange="loadPosts()">
+                <option value="">כל הסטטוסים</option>
+                <option value="published">מפורסם</option>
+                <option value="draft">טיוטה</option>
+            </select>
+            <select id="filterCategory" onchange="loadPosts()">
+                <option value="">כל הקטגוריות</option>
+            </select>
+            <input type="text" id="searchInput" placeholder="חיפוש..." onkeyup="debounceSearch()">
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>כותרת</th>
+                    <th>מחבר</th>
+                    <th>קטגוריה</th>
+                    <th>סטטוס</th>
+                    <th>צפיות</th>
+                    <th>תאריך</th>
+                    <th>פעולות</th>
+                </tr>
+            </thead>
+            <tbody id="postsTable">
+                <tr><td colspan="7" class="empty">טוען...</td></tr>
+            </tbody>
+        </table>
+        <div class="pagination" id="pagination"></div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = '/login';
+        const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+
+        let currentPage = 1;
+        let searchTimeout;
+
+        async function loadPosts(page = 1) {
+            currentPage = page;
+            const status = document.getElementById('filterStatus').value;
+            const category = document.getElementById('filterCategory').value;
+            const search = document.getElementById('searchInput').value;
+
+            let url = `/api/blog/posts?page=${page}&per_page=15`;
+            if (status) url += `&status=${status}`;
+            if (category) url += `&category_id=${category}`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+
+            try {
+                const response = await fetch(url, { headers });
+                const data = await response.json();
+
+                const tbody = document.getElementById('postsTable');
+                if (data.posts.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="empty">לא נמצאו פוסטים</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.posts.map(post => `
+                    <tr>
+                        <td><strong>${post.title}</strong></td>
+                        <td>${post.author_name}</td>
+                        <td>${post.category_name || '-'}</td>
+                        <td><span class="status-badge status-${post.status}">${post.status === 'published' ? 'מפורסם' : 'טיוטה'}</span></td>
+                        <td>${post.views}</td>
+                        <td>${new Date(post.created_at).toLocaleDateString('he-IL')}</td>
+                        <td>
+                            <div class="action-btns">
+                                <a href="/blog/post/${post.slug}" target="_blank" class="action-btn view"><i class="fas fa-eye"></i></a>
+                                <a href="/admin/posts/${post.id}/edit" class="action-btn edit"><i class="fas fa-edit"></i></a>
+                                <button class="action-btn delete" onclick="deletePost(${post.id})"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+
+                renderPagination(data.total_pages);
+            } catch (error) {
+                console.error('Failed to load posts:', error);
+            }
+        }
+
+        function renderPagination(totalPages) {
+            const container = document.getElementById('pagination');
+            container.innerHTML = '';
+            for (let i = 1; i <= totalPages; i++) {
+                container.innerHTML += `<button class="${i === currentPage ? 'active' : ''}" onclick="loadPosts(${i})">${i}</button>`;
+            }
+        }
+
+        async function loadCategories() {
+            try {
+                const response = await fetch('/api/blog/categories');
+                const categories = await response.json();
+                const select = document.getElementById('filterCategory');
+                categories.forEach(cat => {
+                    select.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+                });
+            } catch (error) { console.error(error); }
+        }
+
+        async function deletePost(id) {
+            if (!confirm('האם למחוק את הפוסט?')) return;
+            try {
+                await fetch(`/api/blog/posts/${id}`, { method: 'DELETE', headers });
+                loadPosts(currentPage);
+            } catch (error) { console.error(error); }
+        }
+
+        function debounceSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => loadPosts(), 300);
+        }
+
+        loadCategories();
+        loadPosts();
+    </script>
+</body>
+</html>

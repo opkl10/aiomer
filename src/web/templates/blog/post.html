@@ -1,0 +1,493 @@
+{% extends "blog/base.html" %}
+
+{% block title %}פוסט{% endblock %}
+
+{% block content %}
+<article class="post-full" id="postContent">
+    <div class="loading" style="text-align: center; padding: 60px;">טוען פוסט...</div>
+</article>
+
+<section class="comments-section" id="commentsSection" style="display: none;">
+    <h3><i class="fas fa-comments"></i> תגובות</h3>
+    <div id="commentsList"></div>
+
+    <div class="comment-form" id="commentForm">
+        <h4>השאר תגובה</h4>
+        <form onsubmit="submitComment(event)">
+            <input type="text" id="commentName" placeholder="שם *" required>
+            <input type="email" id="commentEmail" placeholder="אימייל *" required>
+            <textarea id="commentContent" placeholder="התגובה שלך *" rows="4" required></textarea>
+            <button type="submit">שלח תגובה</button>
+        </form>
+    </div>
+</section>
+
+<style>
+    .post-full {
+        max-width: 800px;
+        margin: 0 auto;
+        background: var(--card-bg);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+    }
+
+    .post-full-image {
+        width: 100%;
+        max-height: 400px;
+        object-fit: cover;
+    }
+
+    .post-full-content {
+        padding: 40px;
+    }
+
+    .post-full-meta {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        color: var(--text-light);
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .post-full-category {
+        background: var(--primary);
+        color: white;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+    }
+
+    .post-full h1 {
+        font-size: 2.2rem;
+        margin-bottom: 20px;
+        line-height: 1.3;
+    }
+
+    .post-full-body {
+        font-size: 1.1rem;
+        line-height: 1.9;
+    }
+
+    .post-full-body h2 {
+        margin-top: 30px;
+        margin-bottom: 15px;
+    }
+
+    .post-full-body h3 {
+        margin-top: 25px;
+        margin-bottom: 12px;
+    }
+
+    .post-full-body p {
+        margin-bottom: 18px;
+    }
+
+    .post-full-body img {
+        max-width: 100%;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+
+    .post-full-body pre {
+        background: #1e1e1e;
+        color: #d4d4d4;
+        padding: 20px;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin: 20px 0;
+    }
+
+    .post-full-body code {
+        background: #f0f0f0;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: 'Fira Code', monospace;
+    }
+
+    .post-full-body pre code {
+        background: none;
+        padding: 0;
+    }
+
+    .post-full-body blockquote {
+        border-right: 4px solid var(--primary);
+        padding: 15px 20px;
+        margin: 20px 0;
+        background: var(--bg);
+        border-radius: 0 8px 8px 0;
+    }
+
+    .post-full-body ul, .post-full-body ol {
+        margin: 15px 0;
+        padding-right: 25px;
+    }
+
+    .post-full-body li {
+        margin-bottom: 8px;
+    }
+
+    .post-tags {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+    }
+
+    .post-author {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-top: 30px;
+        padding: 20px;
+        background: var(--bg);
+        border-radius: 8px;
+    }
+
+    .post-author-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .post-share {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .post-share a {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        text-decoration: none;
+        transition: transform 0.3s;
+    }
+
+    .post-share a:hover {
+        transform: scale(1.1);
+    }
+
+    .post-share .facebook { background: #3b5998; }
+    .post-share .twitter { background: #1da1f2; }
+    .post-share .linkedin { background: #0077b5; }
+    .post-share .whatsapp { background: #25d366; }
+
+    /* Comments */
+    .comments-section {
+        max-width: 800px;
+        margin: 40px auto 0;
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+    }
+
+    .comments-section h3 {
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--primary);
+    }
+
+    .comment {
+        padding: 20px 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .comment:last-child {
+        border-bottom: none;
+    }
+
+    .comment-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .comment-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--secondary);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .comment-author {
+        font-weight: 600;
+    }
+
+    .comment-date {
+        color: var(--text-light);
+        font-size: 0.85rem;
+    }
+
+    .comment-body {
+        padding-right: 50px;
+    }
+
+    .comment-form {
+        margin-top: 30px;
+        padding-top: 30px;
+        border-top: 1px solid var(--border);
+    }
+
+    .comment-form h4 {
+        margin-bottom: 20px;
+    }
+
+    .comment-form input,
+    .comment-form textarea {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin-bottom: 15px;
+        outline: none;
+        font-family: inherit;
+    }
+
+    .comment-form input:focus,
+    .comment-form textarea:focus {
+        border-color: var(--primary);
+    }
+
+    .comment-form button {
+        padding: 12px 30px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background 0.3s;
+    }
+
+    .comment-form button:hover {
+        background: var(--secondary);
+    }
+
+    .related-posts {
+        max-width: 800px;
+        margin: 40px auto 0;
+    }
+
+    .related-posts h3 {
+        margin-bottom: 20px;
+    }
+
+    .related-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .post-full-content {
+            padding: 25px;
+        }
+
+        .post-full h1 {
+            font-size: 1.7rem;
+        }
+
+        .related-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const slug = '{{ slug }}';
+    let postData = null;
+
+    async function loadPost() {
+        try {
+            const response = await fetch(`/api/blog/posts/${slug}`);
+            if (!response.ok) throw new Error('Post not found');
+
+            postData = await response.json();
+
+            // Update page title
+            document.title = postData.title;
+
+            // Render post
+            document.getElementById('postContent').innerHTML = `
+                ${postData.featured_image ? `<img src="${postData.featured_image}" alt="${postData.title}" class="post-full-image">` : ''}
+                <div class="post-full-content">
+                    <div class="post-full-meta">
+                        ${postData.category_name ? `<a href="/blog/category/${postData.category_id}" class="post-full-category">${postData.category_name}</a>` : ''}
+                        <span><i class="far fa-calendar"></i> ${new Date(postData.published_at || postData.created_at).toLocaleDateString('he-IL')}</span>
+                        <span><i class="far fa-user"></i> ${postData.author_name}</span>
+                        <span><i class="far fa-eye"></i> ${postData.views} צפיות</span>
+                    </div>
+
+                    <h1>${postData.title}</h1>
+
+                    <div class="post-full-body">
+                        ${renderContent(postData.content)}
+                    </div>
+
+                    ${postData.tags.length > 0 ? `
+                        <div class="post-tags">
+                            <strong><i class="fas fa-tags"></i> תגיות:</strong>
+                            ${postData.tags.map(t => `<a href="/blog/tag/${t.slug}" class="tag">${t.name}</a>`).join(' ')}
+                        </div>
+                    ` : ''}
+
+                    <div class="post-author">
+                        <div class="post-author-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <strong>${postData.author_name}</strong>
+                            <p style="margin: 0; color: var(--text-light);">מחבר הפוסט</p>
+                        </div>
+                    </div>
+
+                    <div class="post-share">
+                        <span style="line-height: 40px;"><i class="fas fa-share-alt"></i> שתף:</span>
+                        <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}" target="_blank" class="facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(postData.title)}" target="_blank" class="twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(window.location.href)}&title=${encodeURIComponent(postData.title)}" target="_blank" class="linkedin"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="https://wa.me/?text=${encodeURIComponent(postData.title + ' ' + window.location.href)}" target="_blank" class="whatsapp"><i class="fab fa-whatsapp"></i></a>
+                    </div>
+                </div>
+            `;
+
+            // Load comments if enabled
+            if (postData.allow_comments) {
+                document.getElementById('commentsSection').style.display = 'block';
+                loadComments();
+            }
+
+        } catch (error) {
+            console.error('Failed to load post:', error);
+            document.getElementById('postContent').innerHTML = `
+                <div style="text-align: center; padding: 60px;">
+                    <h2>הפוסט לא נמצא</h2>
+                    <p>הפוסט שחיפשת לא קיים או הוסר.</p>
+                    <a href="/blog" style="color: var(--primary);">חזרה לבלוג</a>
+                </div>
+            `;
+        }
+    }
+
+    function renderContent(content) {
+        // Simple markdown-like rendering
+        let html = content;
+
+        // Convert markdown code blocks
+        html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>');
+
+        // Convert inline code
+        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+        // Convert headers
+        html = html.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+        html = html.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+        html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+
+        // Convert bold and italic
+        html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+        // Convert links
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+
+        // Convert images
+        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+
+        // Convert blockquotes
+        html = html.replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>');
+
+        // Convert line breaks to paragraphs
+        html = html.split('\n\n').map(p => {
+            if (!p.startsWith('<')) return `<p>${p}</p>`;
+            return p;
+        }).join('');
+
+        return html;
+    }
+
+    async function loadComments() {
+        try {
+            const response = await fetch(`/api/blog/posts/${postData.id}/comments`);
+            const comments = await response.json();
+
+            const list = document.getElementById('commentsList');
+
+            if (comments.length === 0) {
+                list.innerHTML = '<p style="color: var(--text-light);">אין תגובות עדיין. היה הראשון להגיב!</p>';
+                return;
+            }
+
+            list.innerHTML = comments.map(comment => `
+                <div class="comment">
+                    <div class="comment-header">
+                        <div class="comment-avatar">${comment.author_name.charAt(0)}</div>
+                        <div>
+                            <div class="comment-author">${comment.author_name}</div>
+                            <div class="comment-date">${new Date(comment.created_at).toLocaleDateString('he-IL')}</div>
+                        </div>
+                    </div>
+                    <div class="comment-body">${comment.content}</div>
+                </div>
+            `).join('');
+
+        } catch (error) {
+            console.error('Failed to load comments:', error);
+        }
+    }
+
+    async function submitComment(event) {
+        event.preventDefault();
+
+        const data = {
+            post_id: postData.id,
+            author_name: document.getElementById('commentName').value,
+            author_email: document.getElementById('commentEmail').value,
+            content: document.getElementById('commentContent').value
+        };
+
+        try {
+            const response = await fetch('/api/blog/comments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                alert('התגובה נשלחה וממתינה לאישור');
+                document.getElementById('commentName').value = '';
+                document.getElementById('commentEmail').value = '';
+                document.getElementById('commentContent').value = '';
+            } else {
+                alert('שגיאה בשליחת התגובה');
+            }
+        } catch (error) {
+            console.error('Failed to submit comment:', error);
+            alert('שגיאה בשליחת התגובה');
+        }
+    }
+
+    // Initialize
+    loadPost();
+</script>
+{% endblock %}

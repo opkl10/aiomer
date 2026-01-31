@@ -1,0 +1,67 @@
+{% extends "blog/base.html" %}
+
+{% block title %}תגית{% endblock %}
+
+{% block hero %}
+<section class="hero">
+    <h1><i class="fas fa-tag"></i> <span id="tagName">{{ slug }}</span></h1>
+</section>
+{% endblock %}
+
+{% block content %}
+<div class="posts-list" id="postsList">
+    <div class="loading" style="text-align: center; padding: 40px;">טוען פוסטים...</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const slug = '{{ slug }}';
+
+    async function loadPosts() {
+        try {
+            // Get tag ID
+            const tagsResponse = await fetch('/api/blog/tags');
+            const tags = await tagsResponse.json();
+            const tag = tags.find(t => t.slug === slug);
+
+            if (!tag) {
+                document.getElementById('postsList').innerHTML = '<p style="text-align: center;">תגית לא נמצאה</p>';
+                return;
+            }
+
+            document.getElementById('tagName').textContent = tag.name;
+            document.title = tag.name + ' - בלוג';
+
+            // Load posts with this tag
+            const response = await fetch(`/api/blog/posts?tag_id=${tag.id}&status=published`);
+            const data = await response.json();
+
+            if (data.posts.length === 0) {
+                document.getElementById('postsList').innerHTML = '<p style="text-align: center; padding: 40px;">אין פוסטים עם תגית זו</p>';
+                return;
+            }
+
+            document.getElementById('postsList').innerHTML = data.posts.map(post => `
+                <article class="post-card">
+                    ${post.featured_image ? `<img src="${post.featured_image}" alt="${post.title}" class="post-card-image">` : ''}
+                    <div class="post-card-content">
+                        <div class="post-card-meta">
+                            ${post.category_name ? `<span class="post-card-category">${post.category_name}</span>` : ''}
+                            <span><i class="far fa-calendar"></i> ${new Date(post.published_at || post.created_at).toLocaleDateString('he-IL')}</span>
+                        </div>
+                        <h2><a href="/blog/post/${post.slug}">${post.title}</a></h2>
+                        <p class="post-card-excerpt">${post.excerpt || post.content.substring(0, 200)}...</p>
+                        <a href="/blog/post/${post.slug}" class="read-more">קרא עוד <i class="fas fa-arrow-left"></i></a>
+                    </div>
+                </article>
+            `).join('');
+
+        } catch (error) {
+            console.error('Failed to load posts:', error);
+        }
+    }
+
+    loadPosts();
+</script>
+{% endblock %}

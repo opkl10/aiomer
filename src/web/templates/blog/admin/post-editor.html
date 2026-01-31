@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>עורך פוסטים</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --success: #27ae60;
+            --bg: #f4f6f9;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+            background: var(--bg);
+        }
+
+        .editor-layout {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            min-height: 100vh;
+        }
+
+        .editor-main {
+            padding: 30px;
+        }
+
+        .editor-sidebar {
+            background: var(--card-bg);
+            border-right: 1px solid #e0e0e0;
+            padding: 25px;
+            overflow-y: auto;
+        }
+
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .editor-header h1 {
+            font-size: 1.5rem;
+            color: var(--secondary);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: var(--secondary);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        /* Title Input */
+        .title-input {
+            width: 100%;
+            font-size: 2rem;
+            font-weight: 700;
+            border: none;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            outline: none;
+            background: transparent;
+        }
+
+        .title-input::placeholder {
+            color: #ccc;
+        }
+
+        /* Content Editor */
+        .content-editor {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .editor-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            background: #fafafa;
+        }
+
+        .toolbar-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .toolbar-btn:hover {
+            background: #e0e0e0;
+            color: var(--primary);
+        }
+
+        .toolbar-divider {
+            width: 1px;
+            height: 24px;
+            background: #e0e0e0;
+            margin: 6px 8px;
+        }
+
+        .content-textarea {
+            width: 100%;
+            min-height: 500px;
+            padding: 25px;
+            border: none;
+            outline: none;
+            font-size: 1.05rem;
+            line-height: 1.8;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        /* Sidebar Sections */
+        .sidebar-section {
+            margin-bottom: 25px;
+        }
+
+        .sidebar-section h3 {
+            font-size: 0.9rem;
+            color: var(--secondary);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+        }
+
+        select.form-control {
+            appearance: none;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat left 12px center;
+            padding-left: 35px;
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Featured Image */
+        .featured-image-preview {
+            width: 100%;
+            height: 150px;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-size: cover;
+            background-position: center;
+            margin-bottom: 10px;
+        }
+
+        .featured-image-preview:hover {
+            border-color: var(--primary);
+        }
+
+        .featured-image-preview i {
+            font-size: 2rem;
+            color: #ccc;
+        }
+
+        .featured-image-preview.has-image i {
+            display: none;
+        }
+
+        /* Tags */
+        .tags-input {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            min-height: 42px;
+        }
+
+        .tag-badge {
+            background: var(--primary);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .tag-badge button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0;
+            font-size: 0.9rem;
+        }
+
+        .tags-input input {
+            border: none;
+            outline: none;
+            flex: 1;
+            min-width: 100px;
+            padding: 4px;
+        }
+
+        /* Toggle */
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+        }
+
+        .toggle {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #ccc;
+            border-radius: 26px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            right: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .toggle input:checked + .toggle-slider {
+            background: var(--success);
+        }
+
+        .toggle input:checked + .toggle-slider:before {
+            transform: translateX(-24px);
+        }
+
+        /* AI Assistant */
+        .ai-assist-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .ai-assist-btn:hover {
+            opacity: 0.9;
+        }
+
+        @media (max-width: 1024px) {
+            .editor-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .editor-sidebar {
+                border-right: none;
+                border-top: 1px solid #e0e0e0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="editor-layout">
+        <main class="editor-main">
+            <div class="editor-header">
+                <h1 id="pageTitle">פוסט חדש</h1>
+                <div class="header-actions">
+                    <a href="/admin/posts" class="btn btn-secondary">
+                        <i class="fas fa-arrow-right"></i> חזרה
+                    </a>
+                    <button class="btn btn-secondary" onclick="saveDraft()">
+                        <i class="fas fa-save"></i> שמור טיוטה
+                    </button>
+                    <button class="btn btn-success" onclick="publish()">
+                        <i class="fas fa-paper-plane"></i> פרסם
+                    </button>
+                </div>
+            </div>
+
+            <input type="text" class="title-input" id="postTitle" placeholder="כותרת הפוסט...">
+
+            <div class="content-editor">
+                <div class="editor-toolbar">
+                    <button class="toolbar-btn" onclick="formatText('bold')" title="מודגש">
+                        <i class="fas fa-bold"></i>
+                    </button>
+                    <button class="toolbar-btn" onclick="formatText('italic')" title="נטוי">
+                        <i class="fas fa-italic"></i>
+                    </button>
+                    <button class="toolbar-btn" onclick="formatText('underline')" title="קו תחתון">
+                        <i class="fas fa-underline"></i>
+                    </button>
+                    <div class="toolbar-divider"></div>
+                    <button class="toolbar-btn" onclick="formatText('h2')" title="כותרת">
+                        <i class="fas fa-heading"></i>
+                    </button>
+                    <button class="toolbar-btn" onclick="formatText('h3')" title="כותרת משנית">
+                        <i class="fas fa-heading" style="font-size: 0.8rem;"></i>
+                    </button>
+                    <div class="toolbar-divider"></div>
+                    <button class="toolbar-btn" onclick="formatText('ul')" title="רשימה">
+                        <i class="fas fa-list-ul"></i>
+                    </button>
+                    <button class="toolbar-btn" onclick="formatText('ol')" title="רשימה ממוספרת">
+                        <i class="fas fa-list-ol"></i>
+                    </button>
+                    <button class="toolbar-btn" onclick="formatText('quote')" title="ציטוט">
+                        <i class="fas fa-quote-right"></i>
+                    </button>
+                    <div class="toolbar-divider"></div>
+                    <button class="toolbar-btn" onclick="formatText('link')" title="קישור">
+                        <i class="fas fa-link"></i>
+                    </button>
+                    <button class="toolbar-btn" onclick="formatText('image')" title="תמונה">
+                        <i class="fas fa-image"></i>
+                    </button>
+                    <button class="toolbar-btn" onclick="formatText('code')" title="קוד">
+                        <i class="fas fa-code"></i>
+                    </button>
+                </div>
+                <textarea class="content-textarea" id="postContent" placeholder="התחל לכתוב את הפוסט שלך כאן...
+
+אתה יכול להשתמש ב-Markdown:
+# כותרת
+**טקסט מודגש**
+*טקסט נטוי*
+[קישור](url)
+![תמונה](url)
+```code```"></textarea>
+            </div>
+        </main>
+
+        <aside class="editor-sidebar">
+            <div class="sidebar-section">
+                <h3><i class="fas fa-cog"></i> הגדרות פרסום</h3>
+                <div class="form-group">
+                    <label>סטטוס</label>
+                    <select class="form-control" id="postStatus">
+                        <option value="draft">טיוטה</option>
+                        <option value="published">מפורסם</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>קטגוריה</label>
+                    <select class="form-control" id="postCategory">
+                        <option value="">ללא קטגוריה</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Slug (URL)</label>
+                    <input type="text" class="form-control" id="postSlug" placeholder="יווצר אוטומטית">
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3><i class="fas fa-image"></i> תמונה ראשית</h3>
+                <div class="featured-image-preview" id="featuredImagePreview" onclick="document.getElementById('featuredImageInput').click()">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <input type="file" id="featuredImageInput" accept="image/*" style="display: none;" onchange="uploadFeaturedImage(this)">
+                <input type="text" class="form-control" id="featuredImageUrl" placeholder="או הדבק URL">
+            </div>
+
+            <div class="sidebar-section">
+                <h3><i class="fas fa-tags"></i> תגיות</h3>
+                <div class="tags-input" id="tagsContainer">
+                    <input type="text" id="tagInput" placeholder="הוסף תגית..." onkeydown="addTag(event)">
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3><i class="fas fa-align-right"></i> תקציר</h3>
+                <textarea class="form-control" id="postExcerpt" placeholder="תקציר קצר לפוסט (אופציונלי)"></textarea>
+            </div>
+
+            <div class="sidebar-section">
+                <h3><i class="fas fa-toggle-on"></i> אפשרויות</h3>
+                <div class="toggle-group">
+                    <span>פוסט מומלץ</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="isFeatured">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <span>אפשר תגובות</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="allowComments" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3><i class="fas fa-search"></i> SEO</h3>
+                <div class="form-group">
+                    <label>Meta Title</label>
+                    <input type="text" class="form-control" id="metaTitle" placeholder="כותרת למנועי חיפוש">
+                </div>
+                <div class="form-group">
+                    <label>Meta Description</label>
+                    <textarea class="form-control" id="metaDescription" placeholder="תיאור למנועי חיפוש"></textarea>
+                </div>
+            </div>
+
+            <button class="ai-assist-btn" onclick="openAIAssist()">
+                <i class="fas fa-robot"></i> עזרה מ-AI
+            </button>
+        </aside>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = '/login';
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        };
+
+        let postId = null;
+        let selectedTags = [];
+
+        // Check if editing existing post
+        const pathParts = window.location.pathname.split('/');
+        if (pathParts.includes('edit')) {
+            postId = parseInt(pathParts[pathParts.indexOf('posts') + 1]);
+            loadPost(postId);
+            document.getElementById('pageTitle').textContent = 'עריכת פוסט';
+        }
+
+        async function loadPost(id) {
+            try {
+                const response = await fetch(`/api/blog/posts?page=1&per_page=100`, { headers });
+                const data = await response.json();
+                const post = data.posts.find(p => p.id === id);
+
+                if (!post) return;
+
+                document.getElementById('postTitle').value = post.title;
+                document.getElementById('postContent').value = post.content;
+                document.getElementById('postSlug').value = post.slug;
+                document.getElementById('postStatus').value = post.status;
+                document.getElementById('postCategory').value = post.category_id || '';
+                document.getElementById('postExcerpt').value = post.excerpt || '';
+                document.getElementById('isFeatured').checked = post.is_featured;
+                document.getElementById('allowComments').checked = post.allow_comments;
+                document.getElementById('metaTitle').value = post.meta_title || '';
+                document.getElementById('metaDescription').value = post.meta_description || '';
+
+                if (post.featured_image) {
+                    document.getElementById('featuredImageUrl').value = post.featured_image;
+                    const preview = document.getElementById('featuredImagePreview');
+                    preview.style.backgroundImage = `url(${post.featured_image})`;
+                    preview.classList.add('has-image');
+                }
+
+                selectedTags = post.tags || [];
+                renderTags();
+
+            } catch (error) {
+                console.error('Failed to load post:', error);
+            }
+        }
+
+        async function loadCategories() {
+            try {
+                const response = await fetch('/api/blog/categories');
+                const categories = await response.json();
+
+                const select = document.getElementById('postCategory');
+                categories.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat.id;
+                    option.textContent = cat.name;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Failed to load categories:', error);
+            }
+        }
+
+        function formatText(type) {
+            const textarea = document.getElementById('postContent');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+
+            let replacement = '';
+            switch (type) {
+                case 'bold':
+                    replacement = `**${selectedText || 'טקסט מודגש'}**`;
+                    break;
+                case 'italic':
+                    replacement = `*${selectedText || 'טקסט נטוי'}*`;
+                    break;
+                case 'underline':
+                    replacement = `__${selectedText || 'טקסט עם קו תחתון'}__`;
+                    break;
+                case 'h2':
+                    replacement = `\n## ${selectedText || 'כותרת'}\n`;
+                    break;
+                case 'h3':
+                    replacement = `\n### ${selectedText || 'כותרת משנית'}\n`;
+                    break;
+                case 'ul':
+                    replacement = `\n- פריט 1\n- פריט 2\n- פריט 3\n`;
+                    break;
+                case 'ol':
+                    replacement = `\n1. פריט 1\n2. פריט 2\n3. פריט 3\n`;
+                    break;
+                case 'quote':
+                    replacement = `\n> ${selectedText || 'ציטוט'}\n`;
+                    break;
+                case 'link':
+                    const url = prompt('הכנס URL:');
+                    if (url) replacement = `[${selectedText || 'טקסט הקישור'}](${url})`;
+                    break;
+                case 'image':
+                    const imgUrl = prompt('הכנס URL של התמונה:');
+                    if (imgUrl) replacement = `![${selectedText || 'תיאור תמונה'}](${imgUrl})`;
+                    break;
+                case 'code':
+                    replacement = `\`\`\`\n${selectedText || 'קוד כאן'}\n\`\`\``;
+                    break;
+            }
+
+            if (replacement) {
+                textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
+                textarea.focus();
+            }
+        }
+
+        function addTag(event) {
+            if (event.key !== 'Enter') return;
+            event.preventDefault();
+
+            const input = document.getElementById('tagInput');
+            const tagName = input.value.trim();
+
+            if (tagName && !selectedTags.find(t => t.name === tagName)) {
+                selectedTags.push({ name: tagName, slug: tagName.toLowerCase().replace(/\s+/g, '-') });
+                renderTags();
+            }
+
+            input.value = '';
+        }
+
+        function renderTags() {
+            const container = document.getElementById('tagsContainer');
+            const input = document.getElementById('tagInput');
+
+            // Remove existing badges
+            container.querySelectorAll('.tag-badge').forEach(el => el.remove());
+
+            selectedTags.forEach((tag, index) => {
+                const badge = document.createElement('span');
+                badge.className = 'tag-badge';
+                badge.innerHTML = `${tag.name} <button onclick="removeTag(${index})">&times;</button>`;
+                container.insertBefore(badge, input);
+            });
+        }
+
+        function removeTag(index) {
+            selectedTags.splice(index, 1);
+            renderTags();
+        }
+
+        async function uploadFeaturedImage(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/api/blog/media/upload', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+
+                const media = await response.json();
+
+                document.getElementById('featuredImageUrl').value = media.file_path;
+                const preview = document.getElementById('featuredImagePreview');
+                preview.style.backgroundImage = `url(${media.file_path})`;
+                preview.classList.add('has-image');
+
+            } catch (error) {
+                console.error('Failed to upload image:', error);
+                alert('שגיאה בהעלאת התמונה');
+            }
+        }
+
+        async function savePost(status) {
+            const data = {
+                title: document.getElementById('postTitle').value,
+                content: document.getElementById('postContent').value,
+                slug: document.getElementById('postSlug').value || undefined,
+                status: status,
+                category_id: document.getElementById('postCategory').value || null,
+                excerpt: document.getElementById('postExcerpt').value || undefined,
+                featured_image: document.getElementById('featuredImageUrl').value || undefined,
+                is_featured: document.getElementById('isFeatured').checked,
+                allow_comments: document.getElementById('allowComments').checked,
+                meta_title: document.getElementById('metaTitle').value || undefined,
+                meta_description: document.getElementById('metaDescription').value || undefined,
+                tag_ids: [] // Would need to create/get tag IDs
+            };
+
+            if (!data.title) {
+                alert('יש להזין כותרת');
+                return;
+            }
+
+            if (!data.content) {
+                alert('יש להזין תוכן');
+                return;
+            }
+
+            try {
+                const url = postId ? `/api/blog/posts/${postId}` : '/api/blog/posts';
+                const method = postId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method,
+                    headers,
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    alert(status === 'published' ? 'הפוסט פורסם בהצלחה!' : 'הטיוטה נשמרה!');
+                    window.location.href = '/admin/posts';
+                } else {
+                    const error = await response.json();
+                    alert('שגיאה: ' + (error.detail || 'לא ניתן לשמור'));
+                }
+            } catch (error) {
+                console.error('Failed to save:', error);
+                alert('שגיאה בשמירה');
+            }
+        }
+
+        function saveDraft() {
+            savePost('draft');
+        }
+
+        function publish() {
+            savePost('published');
+        }
+
+        function openAIAssist() {
+            window.open('/coding', '_blank');
+        }
+
+        // Initialize
+        loadCategories();
+    </script>
+</body>
+</html>

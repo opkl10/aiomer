@@ -1,0 +1,85 @@
+{% extends "blog/base.html" %}
+
+{% block title %}קטגוריה{% endblock %}
+
+{% block hero %}
+<section class="hero" id="categoryHero">
+    <h1 id="categoryName">טוען...</h1>
+    <p id="categoryDescription"></p>
+</section>
+{% endblock %}
+
+{% block content %}
+<div class="posts-list" id="postsList">
+    <div class="loading" style="text-align: center; padding: 40px;">טוען פוסטים...</div>
+</div>
+<div class="pagination" id="pagination"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const slug = '{{ slug }}';
+    let currentPage = 1;
+    let categoryId = null;
+
+    async function loadCategory() {
+        try {
+            const response = await fetch('/api/blog/categories');
+            const categories = await response.json();
+            const category = categories.find(c => c.slug === slug);
+
+            if (!category) {
+                document.getElementById('categoryName').textContent = 'קטגוריה לא נמצאה';
+                document.getElementById('postsList').innerHTML = '<p style="text-align: center;">הקטגוריה לא קיימת</p>';
+                return;
+            }
+
+            categoryId = category.id;
+            document.getElementById('categoryName').textContent = category.name;
+            document.getElementById('categoryDescription').textContent = category.description || '';
+            document.getElementById('categoryHero').style.background = `linear-gradient(135deg, ${category.color} 0%, var(--secondary) 100%)`;
+            document.title = category.name + ' - בלוג';
+
+            loadPosts();
+        } catch (error) {
+            console.error('Failed to load category:', error);
+        }
+    }
+
+    async function loadPosts(page = 1) {
+        if (!categoryId) return;
+
+        try {
+            const response = await fetch(`/api/blog/posts?category_id=${categoryId}&status=published&page=${page}&per_page=10`);
+            const data = await response.json();
+
+            const postsList = document.getElementById('postsList');
+
+            if (data.posts.length === 0) {
+                postsList.innerHTML = '<p style="text-align: center; padding: 40px;">אין פוסטים בקטגוריה זו</p>';
+                return;
+            }
+
+            postsList.innerHTML = data.posts.map(post => `
+                <article class="post-card">
+                    ${post.featured_image ? `<img src="${post.featured_image}" alt="${post.title}" class="post-card-image">` : ''}
+                    <div class="post-card-content">
+                        <div class="post-card-meta">
+                            <span><i class="far fa-calendar"></i> ${new Date(post.published_at || post.created_at).toLocaleDateString('he-IL')}</span>
+                            <span><i class="far fa-user"></i> ${post.author_name}</span>
+                        </div>
+                        <h2><a href="/blog/post/${post.slug}">${post.title}</a></h2>
+                        <p class="post-card-excerpt">${post.excerpt || post.content.substring(0, 200)}...</p>
+                        <a href="/blog/post/${post.slug}" class="read-more">קרא עוד <i class="fas fa-arrow-left"></i></a>
+                    </div>
+                </article>
+            `).join('');
+
+        } catch (error) {
+            console.error('Failed to load posts:', error);
+        }
+    }
+
+    loadCategory();
+</script>
+{% endblock %}
